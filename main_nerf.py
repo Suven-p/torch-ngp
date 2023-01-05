@@ -68,7 +68,7 @@ if __name__ == '__main__':
         opt.fp16 = True
         opt.cuda_ray = True
         opt.preload = True
-    
+
     if opt.patch_size > 1:
         opt.error_map = False # do not use error_map if use patch-based training
         # assert opt.patch_size > 16, "patch_size should > 16 to run LPIPS loss."
@@ -87,7 +87,7 @@ if __name__ == '__main__':
         from nerf.network import NeRFNetwork
 
     print(opt)
-    
+
     seed_everything(opt.seed)
 
     model = NeRFNetwork(
@@ -99,7 +99,7 @@ if __name__ == '__main__':
         density_thresh=opt.density_thresh,
         bg_radius=opt.bg_radius,
     )
-    
+
     print(model)
 
     criterion = torch.nn.MSELoss(reduction='none')
@@ -107,26 +107,26 @@ if __name__ == '__main__':
     #criterion = torch.nn.HuberLoss(reduction='none', beta=0.1) # only available after torch 1.10 ?
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
+
     if opt.test:
-        
+
         metrics = [PSNRMeter(), LPIPSMeter(device=device)]
         trainer = Trainer('ngp', opt, model, device=device, workspace=opt.workspace, criterion=criterion, fp16=opt.fp16, metrics=metrics, use_checkpoint=opt.ckpt)
 
         if opt.gui:
             gui = NeRFGUI(opt, trainer)
             gui.render()
-        
+
         else:
             test_loader = NeRFDataset(opt, device=device, type='test').dataloader()
 
             if test_loader.has_gt:
                 trainer.evaluate(test_loader) # blender has gt, so evaluate it.
-    
+
             trainer.test(test_loader, write_video=True) # test and save video
-            
+
             trainer.save_mesh(resolution=256, threshold=10)
-    
+
     else:
 
         optimizer = lambda model: torch.optim.Adam(model.get_params(opt.lr), betas=(0.9, 0.99), eps=1e-15)
@@ -142,7 +142,7 @@ if __name__ == '__main__':
         if opt.gui:
             gui = NeRFGUI(opt, trainer, train_loader)
             gui.render()
-        
+
         else:
             valid_loader = NeRFDataset(opt, device=device, type='val', downscale=1).dataloader()
 
@@ -151,10 +151,17 @@ if __name__ == '__main__':
 
             # also test
             test_loader = NeRFDataset(opt, device=device, type='test').dataloader()
-            
+
             if test_loader.has_gt:
                 trainer.evaluate(test_loader) # blender has gt, so evaluate it.
-            
+
             trainer.test(test_loader, write_video=True) # test and save video
-            
-            trainer.save_mesh(resolution=256, threshold=10)
+
+            while True:
+                try:
+                    path = input('Enter savepath: ')
+                    resolution = int(input('Enter resolution: '))
+                    threshold = float(input('Enter threshold: '))
+                    trainer.save_mesh(save_path=path, resolution=resolution, threshold=threshold)
+                except:
+                    break
