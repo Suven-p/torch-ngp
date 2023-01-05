@@ -4,7 +4,7 @@ trimesh
 opencv-python
 tensorboardX
 torch
-numpy 
+numpy
 pandas
 tqdm
 matplotlib
@@ -16,3 +16,8 @@ packaging
 scipy
 lpips
 imageio
+
+pycollada
+pyglet
+plyfile
+open3d
